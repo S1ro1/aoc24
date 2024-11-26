@@ -11,6 +11,12 @@
 
 namespace utils
 {
+  /**
+   * @brief Trim a string from both sides
+   * @param str The string to trim
+   * @param whitespace The whitespace characters to trim (default is " \t")
+   * @return The trimmed string
+   */
   inline std::string trim(std::string_view str,
                           const std::optional<std::string_view> &whitespace = std::nullopt)
   {
@@ -24,6 +30,11 @@ namespace utils
     return std::string(str.substr(start, end - start + 1));
   }
 
+  /**
+   * @brief Parse an element from a string
+   * @param line The string to parse
+   * @return The parsed element
+   */
   template <typename T>
   T parse_element(const std::string &line)
   {
@@ -36,6 +47,12 @@ namespace utils
     throw std::runtime_error("Unable to parse line: " + line);
   }
 
+  /**
+   * @brief Read the content of a file
+   * @param filename The filename to read
+   * @param delimiter The delimiter to use (default is "\n")
+   * @return The content of the file
+   */
   inline std::string read_file_content(const std::string &filename, const std::string &delimiter = "\n")
   {
     std::ifstream file(filename);
@@ -53,6 +70,12 @@ namespace utils
     return content;
   }
 
+  /**
+   * @brief Split a string into tokens
+   * @param content The string to split
+   * @param delimiter The delimiter to use
+   * @return The tokens
+   */
   inline auto split_string = [](std::string_view content, std::string_view delimiter)
   {
     std::vector<std::string> tokens;
@@ -73,6 +96,13 @@ namespace utils
     return tokens;
   };
 
+  /**
+   * @brief Parse and split a file into a vector of elements
+   * @param filename The filename to read
+   * @param delimiter1 The delimiter to use for the first split (default is "\n")
+   * @param delimiter2 The delimiter to use for the second split (default is "")
+   * @return The vector of elements
+   */
   template <typename T>
   std::vector<T> parse_and_split(const std::string &filename,
                                  const std::string &delimiter1 = "\n",
@@ -104,6 +134,13 @@ namespace utils
     return result;
   }
 
+  /**
+   * @brief Parse and split a file into a 2D vector of elements
+   * @param filename The filename to read
+   * @param delimiter1 The delimiter to use for the first split (default is "\n")
+   * @param delimiter2 The delimiter to use for the second split (default is ",")
+   * @return The 2D vector of elements
+   */
   template <typename T>
   std::vector<std::vector<T>> parse_and_split_2d(const std::string &filename,
                                                  const std::string &delimiter1 = "\n",
@@ -136,6 +173,13 @@ namespace utils
     return result;
   }
 
+  /**
+   * @brief Parse and split a file into a map
+   * @param filename The filename to read
+   * @param pair_delimiter The delimiter to use for the pair (default is "\n")
+   * @param kv_delimiter The delimiter to use for the key-value pair (default is ":")
+   * @return The map
+   */
   template <typename K, typename V>
   std::map<K, V> parse_to_map(const std::string &filename,
                               const std::string &pair_delimiter = "\n",
