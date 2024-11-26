@@ -7,9 +7,22 @@
 #include <algorithm>
 #include <type_traits>
 #include <map>
+#include <optional>
 
 namespace utils
 {
+  inline std::string trim(std::string_view str,
+                          const std::optional<std::string_view> &whitespace = std::nullopt)
+  {
+    const auto chars = whitespace.value_or(" \t");
+    const auto start = str.find_first_not_of(chars);
+    if (start == std::string_view::npos)
+    {
+      return "";
+    }
+    const auto end = str.find_last_not_of(chars);
+    return std::string(str.substr(start, end - start + 1));
+  }
 
   template <typename T>
   T parse_element(const std::string &line)
@@ -23,7 +36,7 @@ namespace utils
     throw std::runtime_error("Unable to parse line: " + line);
   }
 
-  inline std::string read_file_content(const std::string& filename, const std::string& delimiter = "\n")
+  inline std::string read_file_content(const std::string &filename, const std::string &delimiter = "\n")
   {
     std::ifstream file(filename);
     if (!file.is_open())
@@ -40,48 +53,51 @@ namespace utils
     return content;
   }
 
+  inline auto split_string = [](std::string_view content, std::string_view delimiter)
+  {
+    std::vector<std::string> tokens;
+    size_t pos = 0;
+    while ((pos = content.find(delimiter)) != std::string_view::npos)
+    {
+      auto token = content.substr(0, pos);
+      if (!token.empty())
+      {
+        tokens.emplace_back(token);
+      }
+      content = content.substr(pos + delimiter.length());
+    }
+    if (!content.empty())
+    {
+      tokens.emplace_back(content);
+    }
+    return tokens;
+  };
+
   template <typename T>
   std::vector<T> parse_and_split(const std::string &filename,
                                  const std::string &delimiter1 = "\n",
                                  const std::string &delimiter2 = "")
   {
-    std::string content = read_file_content(filename, delimiter1);
+    const auto content = read_file_content(filename, delimiter1);
     std::vector<T> result;
-    
-    if (delimiter2.empty())
+
+    const auto process_token = [&result](const std::string &token)
     {
-      std::stringstream ss(content);
-      std::string token;
-      while (std::getline(ss, token, delimiter1[0]))
+      if (!token.empty())
       {
-        if (token.empty())
-          continue;
         result.push_back(parse_element<T>(token));
       }
+    };
+
+    if (delimiter2.empty())
+    {
+      std::ranges::for_each(split_string(content, delimiter1), process_token);
     }
     else
     {
-      // Two delimiters mode
-      size_t pos = 0;
-      while ((pos = content.find(delimiter1)) != std::string::npos)
+      for (const auto &line : split_string(content, delimiter1))
       {
-        std::string line = content.substr(0, pos);
-        content.erase(0, pos + delimiter1.length());
-
-        size_t inner_pos = 0;
-        while ((inner_pos = line.find(delimiter2)) != std::string::npos)
-        {
-          std::string token = line.substr(0, inner_pos);
-          if (!token.empty())
-          {
-            result.push_back(parse_element<T>(token));
-          }
-          line.erase(0, inner_pos + delimiter2.length());
-        }
-        if (!line.empty())
-        {
-          result.push_back(parse_element<T>(line));
-        }
+        std::ranges::for_each(split_string(line, delimiter2), process_token);
       }
     }
 
@@ -93,38 +109,25 @@ namespace utils
                                                  const std::string &delimiter1 = "\n",
                                                  const std::string &delimiter2 = ",")
   {
-    std::string content = read_file_content(filename, delimiter1);
+    const auto content = read_file_content(filename, delimiter1);
     std::vector<std::vector<T>> result;
-    
-    // Split into rows
-    size_t pos = 0;
-    while ((pos = content.find(delimiter1)) != std::string::npos)
+
+    const auto process_line = [&delimiter2](const std::string &line)
     {
-      std::string line = content.substr(0, pos);
-      content.erase(0, pos + delimiter1.length());
-
-      if (line.empty())
-        continue;
-
-      // Process each row
       std::vector<T> row;
-      size_t inner_pos = 0;
-      while ((inner_pos = line.find(delimiter2)) != std::string::npos)
+      for (const auto &token : split_string(line, delimiter2))
       {
-        std::string token = line.substr(0, inner_pos);
         if (!token.empty())
         {
           row.push_back(parse_element<T>(token));
         }
-        line.erase(0, inner_pos + delimiter2.length());
       }
-      // Handle the last element in the row
-      if (!line.empty())
-      {
-        row.push_back(parse_element<T>(line));
-      }
+      return row;
+    };
 
-      if (!row.empty())
+    for (const auto &line : split_string(content, delimiter1))
+    {
+      if (auto row = process_line(line); !row.empty())
       {
         result.push_back(std::move(row));
       }
@@ -132,46 +135,38 @@ namespace utils
 
     return result;
   }
+
   template <typename K, typename V>
   std::map<K, V> parse_to_map(const std::string &filename,
                               const std::string &pair_delimiter = "\n",
                               const std::string &kv_delimiter = ":")
   {
-    std::string content = read_file_content(filename, pair_delimiter);
+    const auto content = read_file_content(filename, pair_delimiter);
     std::map<K, V> result;
-    
-    // Split into pairs
-    size_t pos = 0;
-    while ((pos = content.find(pair_delimiter)) != std::string::npos)
+
+    const auto process_pair = [&kv_delimiter](const std::string &pair)
+        -> std::optional<std::pair<std::string, std::string>>
     {
-      std::string pair = content.substr(0, pos);
-      content.erase(0, pos + pair_delimiter.length());
-
-      if (pair.empty())
-        continue;
-
-      // Find the key-value delimiter
-      size_t delim_pos = pair.find(kv_delimiter);
-      if (delim_pos == std::string::npos)
+      if (auto delim_pos = pair.find(kv_delimiter); delim_pos != std::string::npos)
       {
-        throw std::runtime_error("Invalid pair format, missing delimiter: " + pair);
+        auto key = trim(std::string_view(pair.substr(0, delim_pos)));
+        auto value = trim(std::string_view(pair.substr(delim_pos + kv_delimiter.length())));
+        if (!key.empty() && !value.empty())
+        {
+          return std::make_pair(key, value);
+        }
       }
+      return std::nullopt;
+    };
 
-      // Split into key and value
-      std::string key_str = pair.substr(0, delim_pos);
-      std::string value_str = pair.substr(delim_pos + kv_delimiter.length());
-
-      // Trim whitespace if needed
-      key_str.erase(0, key_str.find_first_not_of(" \t"));
-      key_str.erase(key_str.find_last_not_of(" \t") + 1);
-      value_str.erase(0, value_str.find_first_not_of(" \t"));
-      value_str.erase(value_str.find_last_not_of(" \t") + 1);
-
-      if (!key_str.empty() && !value_str.empty())
+    for (const auto &pair : split_string(content, pair_delimiter))
+    {
+      if (auto kv = process_pair(pair))
       {
+        auto &[key_str, value_str] = *kv;
         K key = parse_element<K>(key_str);
         V value = parse_element<V>(value_str);
-        result.insert({std::move(key), std::move(value)});
+        result.emplace(std::move(key), std::move(value));
       }
     }
 

@@ -39,6 +39,8 @@ namespace Day{day}
 
 SOLUTION_HEADER_CONTENT = """#pragma once
 
+#include "utils/utils.hpp"
+
 #include <string>
 
 namespace Day{day}
@@ -52,16 +54,18 @@ namespace Day{day}
 def scaffold_directory(day: int):
     # Ensure src directory exists
     os.makedirs("src", exist_ok=True)
-    os.makedirs("src/utils", exist_ok=True)  # Create utils directory if it doesn't exist
-    
+    os.makedirs(
+        "src/utils", exist_ok=True
+    )  # Create utils directory if it doesn't exist
+
     # Create day directory inside src
     day_dir = f"src/day{day}"
     os.makedirs(day_dir, exist_ok=True)
     os.makedirs(f"{day_dir}/data", exist_ok=True)
 
     # Create empty data files
-    open(f"{day_dir}/data/data.txt", 'a').close()
-    open(f"{day_dir}/data/test.txt", 'a').close()
+    open(f"{day_dir}/data/data.txt", "a").close()
+    open(f"{day_dir}/data/test.txt", "a").close()
 
     # Create source files
     with open(f"{day_dir}/main.cpp", "w") as f:
