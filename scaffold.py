@@ -12,12 +12,12 @@ MAIN_CONTENT = """
 
 int main(int argc, char **argv)
 {{
-    assert(argc == 2);
+  assert(argc == 2);
 
-    auto result1 = Day{day}::part1(argv[1]);
-    std::cout << "Part 1: " << result1 << std::endl;
-    auto result2 = Day{day}::part2(argv[1]);
-    std::cout << "Part 2: " << result2 << std::endl;
+  auto result1 = Day{day}::part1(argv[1]);
+  std::cout << "Part 1: " << result1 << std::endl;
+  auto result2 = Day{day}::part2(argv[1]);
+  std::cout << "Part 2: " << result2 << std::endl;
 }}
 """
 
@@ -25,15 +25,15 @@ SOLUTION_CONTENT = """#include "solution.hpp"
 
 namespace Day{day}
 {{
-    int part1(const std::string &filename)
-    {{
-        return 0;
-    }}
+  int part1(const std::string &filename)
+  {{
+    return 0;
+  }}
 
-    int part2(const std::string &filename)
-    {{
-        return 0;
-    }}
+  int part2(const std::string &filename)
+  {{
+    return 0;
+  }}
 }}
 """
 
@@ -45,13 +45,13 @@ SOLUTION_HEADER_CONTENT = """#pragma once
 
 namespace Day{day}
 {{
-    int part1(const std::string &filename);
-    int part2(const std::string &filename);
+  int part1(const std::string &filename);
+  int part2(const std::string &filename);
 }}
 """
 
 
-def scaffold_directory(day: int):
+def scaffold_directory(day: int, force: bool = False):
     # Ensure src directory exists
     os.makedirs("src", exist_ok=True)
     os.makedirs(
@@ -68,14 +68,17 @@ def scaffold_directory(day: int):
     open(f"{day_dir}/data/test.txt", "a").close()
 
     # Create source files
-    with open(f"{day_dir}/main.cpp", "w") as f:
-        f.write(MAIN_CONTENT.format(day=day))
+    if not os.path.exists(f"{day_dir}/main.cpp") or force:
+        with open(f"{day_dir}/main.cpp", "w") as f:
+            f.write(MAIN_CONTENT.format(day=day))
 
-    with open(f"{day_dir}/solution.cpp", "w") as f:
-        f.write(SOLUTION_CONTENT.format(day=day))
+    if not os.path.exists(f"{day_dir}/solution.cpp") or force:
+        with open(f"{day_dir}/solution.cpp", "w") as f:
+            f.write(SOLUTION_CONTENT.format(day=day))
 
-    with open(f"{day_dir}/solution.hpp", "w") as f:
-        f.write(SOLUTION_HEADER_CONTENT.format(day=day))
+    if not os.path.exists(f"{day_dir}/solution.hpp") or force:
+        with open(f"{day_dir}/solution.hpp", "w") as f:
+            f.write(SOLUTION_HEADER_CONTENT.format(day=day))
 
     # Regenerate CMake
     build_dir = "build"
@@ -86,9 +89,10 @@ def scaffold_directory(day: int):
 def main():
     parser = ArgumentParser()
     parser.add_argument("day", type=int)
+    parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
 
-    scaffold_directory(args.day)
+    scaffold_directory(args.day, force=args.force)
 
     print(f"Created directory for day {args.day}!")
 
