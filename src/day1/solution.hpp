@@ -1,8 +1,7 @@
 #pragma once
 
-#include "utils/utils.hpp"
-
 #include <string>
+import utils;
 
 namespace Day1
 {

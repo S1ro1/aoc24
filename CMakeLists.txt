@@ -4,35 +4,28 @@ project(aoc2024)
 
 set(CMAKE_CXX_STANDARD 23)
 
-# list(APPEND CMAKE_MODULE_PATH "$ENV{HOME}/.cmake/modules")
-# include(GCC14Config)
-
-# Find all directories starting with "day" in src directory
 file(GLOB DAY_DIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src "src/day*")
 
-# Add executable for each day directory
-foreach(day_dir ${DAY_DIRS})
-    # Extract just the "dayX" part from "src/dayX"
-    string(REGEX MATCH "day[0-9]+" target_name ${day_dir})
-    
-    if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/${day_dir})
-        add_executable(${target_name} 
-            src/${day_dir}/main.cpp
-            src/${day_dir}/solution.cpp)
 
-        # Add utils header directory
-        target_include_directories(${target_name} 
-            PUBLIC 
-            ${CMAKE_SOURCE_DIR}/src)
-            
-        # Add custom targets for running with data and test inputs
+foreach(day_dir ${DAY_DIRS})
+    string(REGEX MATCH "day[0-9]+" target_name ${day_dir})
+
+    if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/${day_dir})
+        add_executable(${target_name}
+            src/${day_dir}/main.cpp
+            src/${day_dir}/solution.cpp
+        )
+
+        target_sources(${target_name}
+                PUBLIC FILE_SET modules TYPE CXX_MODULES FILES ${CMAKE_SOURCE_DIR}/src/utils/utils.ixx)
+
         add_custom_target(run_${target_name}
             COMMAND ${target_name} ${CMAKE_CURRENT_SOURCE_DIR}/src/${day_dir}/data/data.txt
             DEPENDS ${target_name}
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             COMMENT "Running ${target_name} with data input"
         )
-        
+
         add_custom_target(test_${target_name}
             COMMAND ${target_name} ${CMAKE_CURRENT_SOURCE_DIR}/src/${day_dir}/data/test.txt
             DEPENDS ${target_name}

@@ -2,8 +2,8 @@
 
 #include <iostream>
 #include <algorithm>
-#include <numeric>
 #include <ranges>
+
 
 namespace Day1 {
   int part1(const std::string &filename) {

@@ -1,15 +1,18 @@
-#pragma once
+module;
 
+#include <iostream>
 #include <fstream>
-#include <vector>
-#include <string>
-#include <sstream>
-#include <algorithm>
-#include <type_traits>
 #include <map>
-#include <optional>
+#include <algorithm>
+#include <ranges>
+#include <string>
+#include <vector>
+#include <sstream>
+#include <stdexcept>
 
-namespace utils
+export module utils;
+
+export namespace utils
 {
   /**
    * @brief Trim a string from both sides
