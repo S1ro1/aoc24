@@ -4,8 +4,8 @@ project(aoc2024)
 
 set(CMAKE_CXX_STANDARD 23)
 
-list(APPEND CMAKE_MODULE_PATH "$ENV{HOME}/.cmake/modules")
-include(GCC14Config)
+# list(APPEND CMAKE_MODULE_PATH "$ENV{HOME}/.cmake/modules")
+# include(GCC14Config)
 
 # Find all directories starting with "day" in src directory
 file(GLOB DAY_DIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src "src/day*")

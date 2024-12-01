@@ -5,49 +5,35 @@
 #include <numeric>
 #include <ranges>
 
-namespace Day1
-{
-  int part1(const std::string &filename)
-  {
+namespace Day1 {
+  int part1(const std::string &filename) {
     const auto data = utils::parse_and_split_2d<int>(filename, "\n", " ");
-
-    const auto left = data | std::views::transform([](const auto &row)
-                                                   { return row[0]; });
-    const auto right = data | std::views::transform([](const auto &row)
-                                                    { return row[1]; });
-
-    std::vector<int> left_vec(left.begin(), left.end());
-    std::vector<int> right_vec(right.begin(), right.end());
-
-    std::sort(left_vec.begin(), left_vec.end());
-    std::sort(right_vec.begin(), right_vec.end());
-
-
-    std::vector<int> diffs;
-    std::transform(left_vec.begin(), left_vec.end(), right_vec.begin(),
-                   std::back_inserter(diffs),
-                   [](const auto &l, const auto &r)
-                   { return std::abs(l - r); });
-
-    return std::accumulate(diffs.begin(), diffs.end(), 0);
+    return std::ranges::fold_left(
+      std::ranges::zip_view(
+        ([](auto vec) {
+          std::sort(vec.begin(), vec.end());
+          return vec;
+        })(data | std::views::transform([](const auto &row) { return row[0]; }) | std::ranges::to<std::vector>()) |
+        std::views::all,
+        ([](auto vec) {
+          std::sort(vec.begin(), vec.end());
+          return vec;
+        })(data | std::views::transform([](const auto &row) { return row[1]; }) | std::ranges::to<std::vector>()) |
+        std::views::all
+      ) | std::views::transform([](const auto &r) { return std::abs(std::get<0>(r) - std::get<1>(r)); }),
+      0,
+      std::plus<>()
+    );
   }
 
-  int part2(const std::string &filename)
-  {
+  int part2(const std::string &filename) {
     const auto data = utils::parse_and_split_2d<int>(filename, "\n", " ");
-
-    const auto left = data | std::views::transform([](const auto &row)
-                                                   { return row[0]; });
-    const auto right = data | std::views::transform([](const auto &row)
-                                                    { return row[1]; });
-    
-    std::vector<int> diffs;
-    std::transform(left.begin(), left.end(), right.begin(),
-                   std::back_inserter(diffs),
-                   [&right](const auto &l, const auto &r)
-                   { return l * std::count(right.begin(), right.end(), l); });
-
-    return std::accumulate(diffs.begin(), diffs.end(), 0);
-
+    return std::ranges::fold_left(
+      (data | std::views::transform([](const auto& row) { return row[0]; }) | std::ranges::to<std::vector>()) |
+      std::views::transform([v2 = data | std::views::transform([](const auto& row) { return row[1]; }) | std::ranges::to<std::vector>()]
+        (const auto& val) { return val * std::count(v2.begin(), v2.end(), val); }),
+      0,
+      std::plus<>()
+    );
   }
 }
