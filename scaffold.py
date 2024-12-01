@@ -39,9 +39,9 @@ namespace Day{day}
 
 SOLUTION_HEADER_CONTENT = """#pragma once
 
-#include "utils/utils.hpp"
-
 #include <string>
+
+import utils;
 
 namespace Day{day}
 {{
