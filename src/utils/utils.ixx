@@ -9,6 +9,10 @@ module;
 #include <vector>
 #include <sstream>
 #include <stdexcept>
+#include <type_traits>
+#include <unordered_map>
+#include <queue>
+
 
 export module utils;
 
@@ -100,18 +104,18 @@ export namespace utils
   };
 
   /**
-   * @brief Parse and split a file into a vector of elements
-   * @param filename The filename to read
+   * @brief Parse and split a file or content into a vector of elements
+   * @param input The filename or content to process
    * @param delimiter1 The delimiter to use for the first split (default is "\n")
    * @param delimiter2 The delimiter to use for the second split (default is "")
    * @return The vector of elements
    */
-  template <typename T>
-  std::vector<T> parse_and_split(const std::string &filename,
-                                 const std::string &delimiter1 = "\n",
-                                 const std::string &delimiter2 = "")
+  template <typename T, bool IsFilename = true>
+  std::vector<T> parse_and_split(const std::string &input,
+                                const std::string &delimiter1 = "\n",
+                                const std::string &delimiter2 = "")
   {
-    const auto content = read_file_content(filename, delimiter1);
+    const auto content = IsFilename ? read_file_content(input, delimiter1) : input;
     std::vector<T> result;
 
     const auto process_token = [&result](const std::string &token)
@@ -138,18 +142,18 @@ export namespace utils
   }
 
   /**
-   * @brief Parse and split a file into a 2D vector of elements
-   * @param filename The filename to read
+   * @brief Parse and split a file or content into a 2D vector of elements
+   * @param input The filename or content to process
    * @param delimiter1 The delimiter to use for the first split (default is "\n")
    * @param delimiter2 The delimiter to use for the second split (default is ",")
    * @return The 2D vector of elements
    */
-  template <typename T>
-  std::vector<std::vector<T>> parse_and_split_2d(const std::string &filename,
-                                                 const std::string &delimiter1 = "\n",
-                                                 const std::string &delimiter2 = ",")
+  template <typename T, bool IsFilename = true>
+  std::vector<std::vector<T>> parse_and_split_2d(const std::string &input,
+                                                const std::string &delimiter1 = "\n",
+                                                const std::string &delimiter2 = ",")
   {
-    const auto content = read_file_content(filename, delimiter1);
+    const auto content = IsFilename ? read_file_content(input, delimiter1) : input;
     std::vector<std::vector<T>> result;
 
     const auto process_line = [&delimiter2](const std::string &line)
@@ -177,19 +181,23 @@ export namespace utils
   }
 
   /**
-   * @brief Parse and split a file into a map
-   * @param filename The filename to read
+   * @brief Parse and split a file or content into a map
+   * @param input The filename or content to process
    * @param pair_delimiter The delimiter to use for the pair (default is "\n")
    * @param kv_delimiter The delimiter to use for the key-value pair (default is ":")
    * @return The map
    */
-  template <typename K, typename V>
-  std::map<K, V> parse_to_map(const std::string &filename,
-                              const std::string &pair_delimiter = "\n",
-                              const std::string &kv_delimiter = ":")
+  template <typename K, typename V, bool IsFilename = true, bool Unique = true>
+  auto parse_to_map(const std::string &input,
+                   const std::string &pair_delimiter = "\n",
+                   const std::string &kv_delimiter = ":")
   {
-    const auto content = read_file_content(filename, pair_delimiter);
-    std::map<K, V> result;
+    const auto content = IsFilename ? read_file_content(input, pair_delimiter) : input;
+    
+    using ResultType = std::conditional_t<Unique, 
+                                        std::map<K, V>, 
+                                        std::vector<std::tuple<K, V>>>;
+    ResultType result;
 
     const auto process_pair = [&kv_delimiter](const std::string &pair)
         -> std::optional<std::pair<std::string, std::string>>
@@ -213,11 +221,56 @@ export namespace utils
         auto &[key_str, value_str] = *kv;
         K key = parse_element<K>(key_str);
         V value = parse_element<V>(value_str);
-        result.emplace(std::move(key), std::move(value));
+        if constexpr (Unique) {
+          result.emplace(std::move(key), std::move(value));
+        } else {
+          result.emplace_back(std::move(key), std::move(value));
+        }
       }
     }
 
     return result;
+  }
+
+  /**
+   * @brief Perform topological sort on the input specified by the set of rules
+   * @param rules set of ordered rules (k, v) where k preceedes v
+   * @return Sorted graph as a vector<T>
+   */
+  template <typename T>
+  std::vector<T> topological_sort(std::vector<std::tuple<T, T>> rules) {
+    std::unordered_map<int, std::vector<int>> adjList;
+    std::unordered_map<int, int> inDegree;
+
+    for (auto [k, v] : rules) {
+      adjList[k].push_back(v);
+      inDegree[v]++;
+      if (inDegree.find(k) == inDegree.end()) {
+        inDegree[k] = 0;
+      }
+    }
+
+    std::queue<int> q;
+    for (const auto& [node, degree] : inDegree) {
+      if (degree == 0) {
+        q.push(node);
+      }
+    }
+
+    std::vector<int> sortedSeq;
+    while (!q.empty()) {
+      int node = q.front();
+      q.pop();
+      sortedSeq.push_back(node);
+
+      for (int neighbor : adjList[node]) {
+        inDegree[neighbor]--;
+        if (inDegree[neighbor] == 0) {
+          q.push(neighbor);
+        }
+      }
+    }
+    return sortedSeq;
   }
 
 } // namespace utils
