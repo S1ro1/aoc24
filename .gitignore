@@ -2,6 +2,7 @@
 .idea
 
 build/
+release/
 
 .ninja_deps
 .ninja_log

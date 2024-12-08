@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 23)
 
 file(GLOB DAY_DIRS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src "src/day*")
 
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L/opt/homebrew/Cellar/llvm/19.1.4/lib/c++ -Wl,-rpath,/opt/homebrew/Cellarr/llvm/19.1.4/lib/c++")
+
 
 foreach(day_dir ${DAY_DIRS})
     string(REGEX MATCH "day[0-9]+" target_name ${day_dir})
