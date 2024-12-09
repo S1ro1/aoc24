@@ -116,7 +116,7 @@ namespace Day8
 
     for (const auto &freq: positions) {
       auto antennas = freq.second;
-      for (int i = 0; i < antennas.size(); i++) {
+      for (int i = 0; i < antennas.size(); i++){
         for (int j = i + 1; j < antennas.size(); j++) {
           result += evalPair2(grid, visited, antennas[i], antennas[j]);
         }
